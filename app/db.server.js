@@ -1,6 +1,4 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const { PrismaClient } = require("./generated/prisma/index.js");
+import { PrismaClient } from "@prisma/client";
 
 if (process.env.NODE_ENV !== "production") {
   if (!global.prismaGlobal) {
