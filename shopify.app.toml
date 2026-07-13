@@ -2,7 +2,7 @@
 
 client_id = "28d96ff4890985e0de46c7800f0cea89"
 name = "Gallery Studio"
-application_url = "https://example.com"
+application_url = "https://gallery-studio.sabaiinnovations.com"
 embedded = true
 
 [build]
@@ -25,7 +25,7 @@ api_version = "2026-10"
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://gallery-studio.sabaiinnovations.com/auth" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
