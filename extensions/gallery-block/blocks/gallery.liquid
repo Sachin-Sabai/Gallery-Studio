@@ -1,0 +1,193 @@
+{% if block.settings.gallery_metaobject != blank %}
+  {% assign gallery = block.settings.gallery_metaobject %}
+{% elsif block.settings.gallery_handle != blank %}
+  {% assign handle_key = block.settings.gallery_handle %}
+  {% assign gallery = shop.metaobjects.gallery_studio[handle_key] %}
+{% endif %}
+
+{% if gallery != blank %}
+  <!-- Load stylesheet -->
+  {{ 'gallery.css' | asset_url | stylesheet_tag }}
+
+  {% assign title = gallery.title.value %}
+  {% assign subtitle = gallery.subtitle.value %}
+  {% assign button_text = gallery.button_text.value %}
+  {% assign button_link = gallery.button_link.value %}
+  {% assign layout = gallery.layout.value | default: 'grid' %}
+  {% assign settings = gallery.settings.value %}
+  {% assign images = gallery.images.value %}
+
+  <!-- Read settings JSON keys -->
+  {% assign columns_desktop = settings.columnsDesktop | default: 4 %}
+  {% assign columns_tablet = settings.columnsTablet | default: 2 %}
+  {% assign columns_mobile = settings.columnsMobile | default: 1 %}
+  {% assign gap = settings.gap | default: 16 %}
+  {% assign padding = settings.padding | default: 16 %}
+  {% assign section_width = settings.sectionWidth | default: '1200px' %}
+  {% assign border_radius = settings.borderRadius | default: 8 %}
+  {% assign shadow = settings.shadow | default: 'none' %}
+  {% assign hover_zoom = settings.hoverZoom %}
+  {% assign hover_overlay = settings.hoverOverlay %}
+  {% assign animation = settings.animation | default: 'fade' %}
+  {% assign lazy_load = settings.lazyLoad %}
+  {% assign heading_alignment = settings.headingAlignment | default: 'center' %}
+  {% assign background_color = settings.backgroundColor | default: '#ffffff' %}
+  {% assign text_color = settings.textColor | default: '#1a1a1a' %}
+  {% assign button_style = settings.buttonStyle | default: 'primary' %}
+  {% assign image_ratio = settings.imageRatio | default: '1:1' %}
+
+  <div 
+    id="gallery-studio-{{ block.id }}" 
+    class="gallery-studio-wrapper gallery-layout-{{ layout }} gallery-animation-{{ animation }}"
+    style="
+      --background-color: {{ background_color }};
+      --text-color: {{ text_color }};
+      --padding: {{ padding }}px;
+      --gap: {{ gap }}px;
+      --border-radius: {{ border_radius }}px;
+      --section-width: {{ section_width }};
+      --columns-desktop: {{ columns_desktop }};
+      --columns-tablet: {{ columns_tablet }};
+      --columns-mobile: {{ columns_mobile }};
+    "
+  >
+    {% if title != blank or subtitle != blank %}
+      <div class="gallery-header" style="text-align: {{ heading_alignment }};">
+        {% if title != blank %}
+          <h2 class="gallery-title" style="color: {{ text_color }};">{{ title }}</h2>
+        {% endif %}
+        {% if subtitle != blank %}
+          <p class="gallery-subtitle" style="color: {{ text_color }}; opacity: 0.8;">{{ subtitle }}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- Layout Grid container -->
+    <div class="gallery-container {% if shadow == 'soft' %}has-shadow-soft{% elsif shadow == 'hard' %}has-shadow-hard{% endif %} {% if hover_zoom %}has-hover-zoom{% endif %} {% if hover_overlay %}has-hover-overlay{% endif %} aspect-ratio-{{ image_ratio | replace: ':', '-' }}">
+      {% if layout == 'split' and images.size >= 2 %}
+        <div class="gallery-item split-featured">
+          <div class="gallery-image-wrapper">
+            <img 
+              src="{{ images[0].image }}" 
+              alt="{{ images[0].alt | escape }}" 
+              {% if lazy_load %}loading="lazy"{% endif %} 
+            />
+            {% if images[0].alt != blank %}
+              <div class="image-caption">{{ images[0].alt }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="gallery-split-subgrid">
+          {% for item in images offset:1 limit:3 %}
+            <div class="gallery-item">
+              <div class="gallery-image-wrapper">
+                <img 
+                  src="{{ item.image }}" 
+                  alt="{{ item.alt | escape }}" 
+                  {% if lazy_load %}loading="lazy"{% endif %} 
+                />
+                {% if item.alt != blank %}
+                  <div class="image-caption">{{ item.alt }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% elsif layout == 'showcase' and images.size >= 1 %}
+        <div class="gallery-item showcase-featured">
+          <div class="gallery-image-wrapper">
+            <img 
+              src="{{ images[0].image }}" 
+              alt="{{ images[0].alt | escape }}" 
+              {% if lazy_load %}loading="lazy"{% endif %} 
+            />
+            {% if images[0].alt != blank %}
+              <div class="image-caption">{{ images[0].alt }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="gallery-showcase-thumbnails">
+          {% for item in images offset:1 %}
+            <div class="gallery-item">
+              <div class="gallery-image-wrapper">
+                <img 
+                  src="{{ item.image }}" 
+                  alt="{{ item.alt | escape }}" 
+                  {% if lazy_load %}loading="lazy"{% endif %} 
+                />
+                {% if item.alt != blank %}
+                  <div class="image-caption">{{ item.alt }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        {% for item in images %}
+          <div class="gallery-item item-index-{{ forloop.index0 }}">
+            <div class="gallery-image-wrapper">
+              <img 
+                src="{{ item.image }}" 
+                alt="{{ item.alt | escape }}" 
+                {% if lazy_load %}loading="lazy"{% endif %} 
+              />
+              {% if item.alt != blank %}
+                <div class="image-caption">{{ item.alt }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Call to Action button -->
+    {% if button_text != blank %}
+      <div class="gallery-footer" style="display: flex; justify-content: {% if heading_alignment == 'left' %}flex-start{% elsif heading_alignment == 'right' %}flex-end{% else %}center{% endif %};">
+        <a 
+          href="{{ button_link | default: '#' }}" 
+          class="gallery-cta-btn button-style-{{ button_style }}"
+          style="
+            --btn-bg: {{ text_color }};
+            --btn-text: {{ background_color }};
+          "
+        >
+          {{ button_text }}
+        </a>
+      </div>
+    {% endif %}
+
+    <!-- Branding -->
+    {% if gallery.plan.value == blank or gallery.plan.value == 'FREE' %}
+      <div class="gallery-branding" style="color: {{ text_color }}; opacity: 0.5;">
+        Powered by <strong>Gallery Studio</strong>
+      </div>
+    {% endif %}
+  </div>
+
+{% else %}
+  <div style="padding: 40px; text-align: center; background: #f6f6f7; border: 1px dashed #ccc; border-radius: 8px;">
+    <p style="margin: 0; font-size: 16px; font-weight: bold; color: #5c5f62;">🖼️ Gallery Studio</p>
+    <p style="margin: 5px 0 0 0; font-size: 14px; color: #6d7175;">Please select a gallery or enter a valid gallery handle in the theme editor settings.</p>
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Gallery Studio",
+  "target": "section",
+  "settings": [
+    {
+      "type": "metaobject",
+      "id": "gallery_metaobject",
+      "label": "Select Gallery (Recommended)",
+      "metaobject_type": "gallery_studio"
+    },
+    {
+      "type": "text",
+      "id": "gallery_handle",
+      "label": "Or Enter Gallery Handle",
+      "info": "Copy from the app dashboard (e.g. gallery-xxxx)."
+    }
+  ]
+}
+{% endschema %}
