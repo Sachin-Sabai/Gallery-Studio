@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useLoaderData, useNavigate, useFetcher, Link, redirect } from "react-router";
 import {
   Page,
@@ -103,8 +104,8 @@ export const action = async ({ request }) => {
   });
 
   let activePlan = "FREE";
-  if (billingCheck.hasActivePayment && billingCheck.activePlans?.length > 0) {
-    activePlan = billingCheck.activePlans[0].name;
+  if (billingCheck.hasActivePayment && billingCheck.appSubscriptions?.length > 0) {
+    activePlan = billingCheck.appSubscriptions[0].name;
   }
 
   if (intent === "create") {
@@ -157,7 +158,7 @@ export const action = async ({ request }) => {
     const id = formData.get("id");
     await prisma.gallery.delete({ where: { id } });
     await deleteGalleryFromShopify(admin, id);
-    return { success: true };
+    return { success: true, deleted: true };
   }
 
   if (intent === "duplicate") {
@@ -200,7 +201,7 @@ export const action = async ({ request }) => {
     });
 
     await syncGalleryToShopify(admin, duplicated, duplicated.images);
-    return { success: true };
+    return { success: true, duplicated: true };
   }
 
   return null;
@@ -227,6 +228,30 @@ export default function Dashboard() {
 
   const totalImages = galleries.reduce((acc, g) => acc + (g.images?.length || 0), 0);
   const errorMessage = fetcher.data?.error;
+  const prevFetcherState = useRef("idle");
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && prevFetcherState.current !== "idle") {
+      if (fetcher.data?.error) {
+        if (typeof shopify !== "undefined" && shopify.toast) {
+          shopify.toast.show(fetcher.data.error, { isError: true });
+        } else {
+          alert(fetcher.data.error);
+        }
+      } else if (fetcher.data?.success) {
+        if (fetcher.data.duplicated) {
+          if (typeof shopify !== "undefined" && shopify.toast) {
+            shopify.toast.show("Gallery duplicated successfully!");
+          }
+        } else if (fetcher.data.deleted) {
+          if (typeof shopify !== "undefined" && shopify.toast) {
+            shopify.toast.show("Gallery deleted successfully!");
+          }
+        }
+      }
+    }
+    prevFetcherState.current = fetcher.state;
+  }, [fetcher.state, fetcher.data]);
 
   return (
     <Page

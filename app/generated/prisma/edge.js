@@ -87,6 +87,9 @@ Prisma.NullTypes = {
  * Enums
  */
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
@@ -139,6 +142,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
@@ -188,18 +196,17 @@ const config = {
   "datasourceNames": [
     "db"
   ],
-  "activeProvider": "sqlite",
-  "postinstall": false,
+  "activeProvider": "postgresql",
   "inlineDatasources": {
     "db": {
       "url": {
-        "fromEnvVar": null,
-        "value": "file:dev.sqlite"
+        "fromEnvVar": "DATABASE_URL",
+        "value": null
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\n// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long\n// enough when changing adapters.\n// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:dev.sqlite\"\n}\n\nmodel Session {\n  id                  String    @id\n  shop                String\n  state               String\n  isOnline            Boolean   @default(false)\n  scope               String?\n  expires             DateTime?\n  accessToken         String\n  userId              BigInt?\n  firstName           String?\n  lastName            String?\n  email               String?\n  accountOwner        Boolean   @default(false)\n  locale              String?\n  collaborator        Boolean?  @default(false)\n  emailVerified       Boolean?  @default(false)\n  refreshToken        String?\n  refreshTokenExpires DateTime?\n}\n\nmodel Gallery {\n  id         String         @id @default(uuid())\n  shop       String\n  title      String\n  subtitle   String?\n  buttonText String?\n  buttonLink String?\n  layout     String\n  plan       String         @default(\"FREE\")\n  settings   String         @default(\"{}\")\n  images     GalleryImage[]\n  createdAt  DateTime       @default(now())\n  updatedAt  DateTime       @updatedAt\n}\n\nmodel GalleryImage {\n  id        String   @id @default(uuid())\n  galleryId String\n  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)\n  image     String\n  alt       String?\n  position  Int      @default(0)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n",
-  "inlineSchemaHash": "118045096a910afd25120d9c453bb99abd31bb0c81c2050f8fd94fcbcaae9b02",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\n// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long\n// enough when changing adapters.\n// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Session {\n  id                  String    @id\n  shop                String\n  state               String\n  isOnline            Boolean   @default(false)\n  scope               String?\n  expires             DateTime?\n  accessToken         String\n  userId              BigInt?\n  firstName           String?\n  lastName            String?\n  email               String?\n  accountOwner        Boolean   @default(false)\n  locale              String?\n  collaborator        Boolean?  @default(false)\n  emailVerified       Boolean?  @default(false)\n  refreshToken        String?\n  refreshTokenExpires DateTime?\n}\n\nmodel Gallery {\n  id         String         @id @default(uuid())\n  shop       String\n  title      String\n  subtitle   String?\n  buttonText String?\n  buttonLink String?\n  layout     String\n  plan       String         @default(\"FREE\")\n  settings   String         @default(\"{}\")\n  images     GalleryImage[]\n  createdAt  DateTime       @default(now())\n  updatedAt  DateTime       @updatedAt\n}\n\nmodel GalleryImage {\n  id        String   @id @default(uuid())\n  galleryId String\n  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)\n  image     String\n  alt       String?\n  position  Int      @default(0)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n",
+  "inlineSchemaHash": "e83fad8f8760bca065e1453ef29ae4f6e484f2e0d66fdfcd9e436179004824a3",
   "copyEngine": true
 }
 config.dirname = '/'
@@ -210,7 +217,9 @@ config.engineWasm = undefined
 config.compilerWasm = undefined
 
 config.injectableEdgeEnv = () => ({
-  parsed: {}
+  parsed: {
+    DATABASE_URL: typeof globalThis !== 'undefined' && globalThis['DATABASE_URL'] || typeof process !== 'undefined' && process.env && process.env.DATABASE_URL || undefined
+  }
 })
 
 if (typeof globalThis !== 'undefined' && globalThis['DEBUG'] || typeof process !== 'undefined' && process.env && process.env.DEBUG || undefined) {
