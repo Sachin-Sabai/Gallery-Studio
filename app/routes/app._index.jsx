@@ -157,7 +157,12 @@ export const action = async ({ request }) => {
   if (intent === "delete") {
     const id = formData.get("id");
     await prisma.gallery.delete({ where: { id } });
-    await deleteGalleryFromShopify(admin, id);
+    
+    // Run Shopify metaobject deletion in the background to avoid blocking the HTTP response and causing timeouts
+    deleteGalleryFromShopify(admin, id).catch((err) => {
+      console.error("Failed to delete gallery from Shopify in background:", err);
+    });
+
     return { success: true, deleted: true };
   }
 
