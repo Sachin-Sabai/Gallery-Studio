@@ -270,7 +270,7 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
     throw new Error("Failed to generate staged upload link");
   }
 
-  // 2. Upload the raw binary file to Google Cloud Storage / S3 target using PUT
+  // 2. Upload raw binary file to Google Cloud Storage / S3 target using PUT
   const uploadRes = await fetch(target.url, {
     method: "PUT",
     headers: {
