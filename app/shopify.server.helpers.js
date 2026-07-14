@@ -292,8 +292,8 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
         files {
           id
           alt
-          status
           ... on MediaImage {
+            status
             image {
               url
             }
