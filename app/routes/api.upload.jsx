@@ -30,6 +30,7 @@ export const action = async ({ request }) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    let shopifyUploadError = null;
     // Try uploading to Shopify Files first
     try {
       const cdnUrl = await uploadImageToShopify(admin, filename, size, type, buffer);
@@ -39,27 +40,50 @@ export const action = async ({ request }) => {
         });
       }
     } catch (shopifyError) {
+      shopifyUploadError = shopifyError;
       console.warn("Shopify CDN upload failed, falling back to local storage:", shopifyError);
     }
 
     // Fallback: Save locally to public/uploads
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    try {
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const ext = path.extname(filename);
+      const cleanName = path.basename(filename, ext).replace(/[^a-zA-Z0-9]/g, "_");
+      const uniqueFilename = `${Date.now()}_${cleanName}${ext}`;
+      const filePath = path.join(uploadDir, uniqueFilename);
+      
+      fs.writeFileSync(filePath, buffer);
+
+      const appUrl = (process.env.SHOPIFY_APP_URL || "").replace(/\/$/, "");
+      const localUrl = `${appUrl}/uploads/${uniqueFilename}`;
+      return new Response(JSON.stringify({ url: localUrl }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (localError) {
+      console.error("Local storage fallback failed:", localError);
+
+      let detailedMessage = "Upload failed. ";
+      if (localError.code === "EROFS" || localError.message.includes("read-only file system")) {
+        detailedMessage += "The server filesystem is read-only. ";
+      } else {
+        detailedMessage += `Local fallback error: ${localError.message}. `;
+      }
+
+      if (shopifyUploadError) {
+        detailedMessage += `Shopify Files CDN upload also failed with: "${shopifyUploadError.message}". Please ensure the app is configured with the 'write_files' access scope and that you have re-authorized the app.`;
+      } else {
+        detailedMessage += "Shopify Files CDN upload did not complete successfully.";
+      }
+
+      return new Response(JSON.stringify({ error: detailedMessage }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-
-    const ext = path.extname(filename);
-    const cleanName = path.basename(filename, ext).replace(/[^a-zA-Z0-9]/g, "_");
-    const uniqueFilename = `${Date.now()}_${cleanName}${ext}`;
-    const filePath = path.join(uploadDir, uniqueFilename);
-    
-    fs.writeFileSync(filePath, buffer);
-
-    const appUrl = (process.env.SHOPIFY_APP_URL || "").replace(/\/$/, "");
-    const localUrl = `${appUrl}/uploads/${uniqueFilename}`;
-    return new Response(JSON.stringify({ url: localUrl }), {
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (error) {
     console.error("Unified upload endpoint error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
