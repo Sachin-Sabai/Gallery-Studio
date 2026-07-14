@@ -275,9 +275,9 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
     form.append(param.name, param.value);
   });
   
-  // Create a Blob from buffer for native FormData append
-  const fileBlob = new Blob([fileBuffer], { type: fileMimeType });
-  form.append("file", fileBlob, fileName);
+  // Create a File object from buffer so that the filename is serialized correctly in multipart form-data
+  const fileObject = new File([fileBuffer], fileName, { type: fileMimeType });
+  form.append("file", fileObject);
 
   const uploadRes = await fetch(target.url, {
     method: "POST",
