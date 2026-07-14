@@ -10,11 +10,20 @@ import prisma from "./db.server";
 
 import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "./constants.js";
 
+const requiredScopes = [
+  "write_products",
+  "write_metaobjects",
+  "write_metaobject_definitions",
+  "write_files"
+];
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.October25,
-  scopes: process.env.SCOPES?.split(","),
+  scopes: process.env.SCOPES
+    ? Array.from(new Set([...process.env.SCOPES.split(",").map(s => s.trim()).filter(Boolean), ...requiredScopes]))
+    : requiredScopes,
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
