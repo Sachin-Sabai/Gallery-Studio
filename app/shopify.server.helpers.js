@@ -245,13 +245,13 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
     }
   `;
 
-  const stagedResponse = await admin.graphql(stagedMutation, {
     variables: {
       input: [
         {
           filename: fileName,
+          httpMethod: "PUT",
           mimeType: fileMimeType,
-          fileSize: String(fileSize),
+          fileSize: String(fileBuffer.byteLength),
           resource: "FILE",
         },
       ],
@@ -269,19 +269,13 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
     throw new Error("Failed to generate staged upload link");
   }
 
-  // 2. Post file to Shopify's Amazon S3 / Google Cloud storage bucket using native fetch & FormData
-  const form = new FormData();
-  target.parameters.forEach((param) => {
-    form.append(param.name, param.value);
-  });
-  
-  // Create a File object from buffer so that the filename is serialized correctly in multipart form-data
-  const fileObject = new File([fileBuffer], fileName, { type: fileMimeType });
-  form.append("file", fileObject);
-
+  // 2. Upload the raw binary file to Google Cloud Storage / S3 target using PUT
   const uploadRes = await fetch(target.url, {
-    method: "POST",
-    body: form,
+    method: "PUT",
+    headers: {
+      "Content-Type": fileMimeType,
+    },
+    body: fileBuffer,
   });
 
   if (!uploadRes.ok) {
