@@ -76,6 +76,3 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const sessionStorage = shopify.sessionStorage;
-export const isTestMode = process.env.SHOPIFY_BILLING_TEST_MODE 
-  ? process.env.SHOPIFY_BILLING_TEST_MODE === "true" 
-  : process.env.NODE_ENV !== "production";

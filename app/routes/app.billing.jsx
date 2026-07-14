@@ -15,7 +15,7 @@ import {
   Badge,
 } from "@shopify/polaris";
 import { CheckIcon, XIcon } from "@shopify/polaris-icons";
-import { authenticate, isTestMode } from "../shopify.server";
+import { authenticate } from "../shopify.server";
 import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "../constants";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 export const loader = async ({ request }) => {
@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
 
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM],
-    isTest: isTestMode,
+    isTest: true,
   });
 
 
@@ -43,7 +43,7 @@ export const action = async ({ request }) => {
 
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM],
-    isTest: isTestMode,
+    isTest: true,
   });
 
   if (intent === "subscribe") {
@@ -53,7 +53,7 @@ export const action = async ({ request }) => {
     try {
       return await billing.request({
         plan: planName,
-        isTest: isTestMode,
+        isTest: true,
         returnUrl,
       });
     } catch (error) {
