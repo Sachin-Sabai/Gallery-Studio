@@ -285,7 +285,9 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
   });
 
   if (!uploadRes.ok) {
-    throw new Error(`Cloud storage upload failed: ${uploadRes.statusText}`);
+    const errorText = await uploadRes.text();
+    console.error("Cloud storage upload error response:", errorText);
+    throw new Error(`Cloud storage upload failed: ${uploadRes.statusText}. Details: ${errorText}`);
   }
 
   // 3. Register the file inside Shopify Files using the resourceUrl
