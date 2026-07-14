@@ -245,6 +245,7 @@ export async function uploadImageToShopify(admin, fileName, fileSize, fileMimeTy
     }
   `;
 
+  const stagedResponse = await admin.graphql(stagedMutation, {
     variables: {
       input: [
         {
