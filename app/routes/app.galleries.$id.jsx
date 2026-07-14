@@ -22,7 +22,7 @@ import {
 } from "@shopify/polaris";
 import { ChevronUpIcon, ChevronDownIcon, DeleteIcon, ImageIcon, MobileIcon, TabletIcon, PlayIcon } from "@shopify/polaris-icons";
 import prisma from "../db.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, isTestMode } from "../shopify.server";
 import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "../constants";
 import { syncGalleryToShopify } from "../shopify.server.helpers";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -32,7 +32,7 @@ export const loader = async ({ request, params }) => {
 
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM],
-    isTest: true,
+    isTest: isTestMode,
   });
 
   let plan = "FREE";

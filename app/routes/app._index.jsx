@@ -15,7 +15,7 @@ import {
   BlockStack,
 } from "@shopify/polaris";
 import prisma from "../db.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, isTestMode } from "../shopify.server";
 import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "../constants";
 import { syncGalleryToShopify, deleteGalleryFromShopify } from "../shopify.server.helpers";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -26,7 +26,7 @@ export const loader = async ({ request }) => {
   // Check current billing plan
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM],
-    isTest: true,
+    isTest: isTestMode,
   });
 
   let plan = "FREE";
@@ -100,7 +100,7 @@ export const action = async ({ request }) => {
 
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM],
-    isTest: true,
+    isTest: isTestMode,
   });
 
   let activePlan = "FREE";
