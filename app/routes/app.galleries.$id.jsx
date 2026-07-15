@@ -125,8 +125,13 @@ export default function GalleryEditor() {
   const [buttonLink, setButtonLink] = useState(gallery.buttonLink || "");
   const [layout, setLayout] = useState(gallery.layout || "grid");
 
-  // Parse default settings
-  const defaultSettings = JSON.parse(gallery.settings || "{}");
+  // Parse default settings safely to avoid component crashes on malformed JSON
+  let defaultSettings = {};
+  try {
+    defaultSettings = JSON.parse(gallery.settings || "{}");
+  } catch (err) {
+    console.error("Failed to parse gallery settings:", err);
+  }
   const [columnsDesktop, setColumnsDesktop] = useState(defaultSettings.columnsDesktop || 4);
   const [columnsTablet, setColumnsTablet] = useState(defaultSettings.columnsTablet || 2);
   const [columnsMobile, setColumnsMobile] = useState(defaultSettings.columnsMobile || 1);

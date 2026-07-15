@@ -90,6 +90,10 @@ export async function ensureMetaobjectDefinition(admin) {
 
 // Helper to sync Gallery details to Shopify Metaobjects
 export async function syncGalleryToShopify(admin, gallery, images) {
+  if (!admin || typeof admin.graphql !== "function") {
+    console.warn("syncGalleryToShopify: admin graphql is not defined, skipping Shopify sync");
+    return;
+  }
   await ensureMetaobjectDefinition(admin);
 
   const handle = `gallery-${gallery.id}`;
@@ -120,8 +124,13 @@ export async function syncGalleryToShopify(admin, gallery, images) {
     position: img.position,
   }));
 
-  // Format settings JSON
-  const settingsData = typeof gallery.settings === "string" ? JSON.parse(gallery.settings) : gallery.settings;
+  // Format settings JSON safely
+  let settingsData = {};
+  try {
+    settingsData = typeof gallery.settings === "string" ? JSON.parse(gallery.settings || "{}") : (gallery.settings || {});
+  } catch (e) {
+    console.error("Failed to parse settings JSON during Shopify sync:", e);
+  }
 
   const fields = [
     { key: "title", value: gallery.title || "" },
@@ -190,6 +199,11 @@ export async function syncGalleryToShopify(admin, gallery, images) {
 // Delete helper
 export async function deleteGalleryFromShopify(admin, galleryId) {
   const handle = `gallery-${galleryId}`;
+
+  if (!admin || typeof admin.graphql !== "function") {
+    console.warn("deleteGalleryFromShopify: admin graphql is not defined, skipping Shopify sync");
+    return;
+  }
 
   const findQuery = `
     query GetMetaobjectByHandle($handle: MetaobjectHandleInput!) {

@@ -36,47 +36,58 @@ export const loader = async ({ request }) => {
 
   // Auto-migrate relative local paths and old tunnel domains to absolute URLs using current SHOPIFY_APP_URL
   const appUrl = (process.env.SHOPIFY_APP_URL || "").replace(/\/$/, "");
-  const allImages = await prisma.galleryImage.findMany();
-  const updatedGalleryIds = new Set();
-  let migrationNeeded = false;
+  try {
+    const allImages = await prisma.galleryImage.findMany({
+      where: {
+        gallery: {
+          shop: shop,
+        },
+      },
+    });
+    const updatedGalleryIds = new Set();
+    let migrationNeeded = false;
 
-  for (const img of allImages) {
-    let newUrl = img.image;
-    if (img.image.startsWith("/uploads/")) {
-      newUrl = `${appUrl}${img.image}`;
-    } else if (img.image.includes("/uploads/")) {
-      const parts = img.image.split("/uploads/");
-      const pathPart = "/uploads/" + parts[parts.length - 1];
-      const expectedUrl = `${appUrl}${pathPart}`;
-      if (img.image !== expectedUrl) {
-        newUrl = expectedUrl;
+    for (const img of allImages) {
+      if (!img.image) continue;
+      let newUrl = img.image;
+      if (img.image.startsWith("/uploads/")) {
+        newUrl = `${appUrl}${img.image}`;
+      } else if (img.image.includes("/uploads/")) {
+        const parts = img.image.split("/uploads/");
+        const pathPart = "/uploads/" + parts[parts.length - 1];
+        const expectedUrl = `${appUrl}${pathPart}`;
+        if (img.image !== expectedUrl) {
+          newUrl = expectedUrl;
+        }
+      }
+
+      if (newUrl !== img.image) {
+        migrationNeeded = true;
+        await prisma.galleryImage.update({
+          where: { id: img.id },
+          data: { image: newUrl },
+        });
+        updatedGalleryIds.add(img.galleryId);
       }
     }
 
-    if (newUrl !== img.image) {
-      migrationNeeded = true;
-      await prisma.galleryImage.update({
-        where: { id: img.id },
-        data: { image: newUrl },
-      });
-      updatedGalleryIds.add(img.galleryId);
-    }
-  }
-
-  if (migrationNeeded) {
-    // Sync updated paths to Shopify Metaobjects
-    const { admin } = await authenticate.admin(request);
-    if (admin) {
-      for (const galleryId of updatedGalleryIds) {
-        const gal = await prisma.gallery.findUnique({
-          where: { id: galleryId },
-          include: { images: { orderBy: { position: "asc" } } },
-        });
-        if (gal) {
-          await syncGalleryToShopify(admin, gal, gal.images);
+    if (migrationNeeded) {
+      // Sync updated paths to Shopify Metaobjects
+      const { admin } = await authenticate.admin(request);
+      if (admin) {
+        for (const galleryId of updatedGalleryIds) {
+          const gal = await prisma.gallery.findUnique({
+            where: { id: galleryId },
+            include: { images: { orderBy: { position: "asc" } } },
+          });
+          if (gal) {
+            await syncGalleryToShopify(admin, gal, gal.images);
+          }
         }
       }
     }
+  } catch (migrateError) {
+    console.error("Failed to migrate gallery image URLs and sync to Shopify:", migrateError);
   }
 
   const galleries = await prisma.gallery.findMany({
@@ -156,14 +167,22 @@ export const action = async ({ request }) => {
 
   if (intent === "delete") {
     const id = formData.get("id");
-    await prisma.gallery.delete({ where: { id } });
-    
-    // Run Shopify metaobject deletion in the background to avoid blocking the HTTP response and causing timeouts
-    deleteGalleryFromShopify(admin, id).catch((err) => {
-      console.error("Failed to delete gallery from Shopify in background:", err);
-    });
+    if (!id) {
+      return { error: "Missing gallery ID for deletion" };
+    }
+    try {
+      await prisma.gallery.delete({ where: { id } });
+      
+      // Run Shopify metaobject deletion in the background to avoid blocking the HTTP response and causing timeouts
+      deleteGalleryFromShopify(admin, id).catch((err) => {
+        console.error("Failed to delete gallery from Shopify in background:", err);
+      });
 
-    return { success: true, deleted: true };
+      return { success: true, deleted: true };
+    } catch (error) {
+      console.error("Error deleting gallery:", error);
+      return { error: `Failed to delete gallery: ${error.message}` };
+    }
   }
 
   if (intent === "duplicate") {
