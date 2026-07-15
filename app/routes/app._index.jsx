@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useLoaderData, useNavigate, useFetcher, Link, redirect } from "react-router";
+import { useLoaderData, useNavigate, useFetcher, Link } from "react-router";
 import {
   Page,
   Layout,
@@ -104,7 +104,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin, session, billing } = await authenticate.admin(request);
+  const { admin, session, billing, redirect } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const intent = formData.get("intent");

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLoaderData, useNavigate, useFetcher, redirect } from "react-router";
+import { useLoaderData, useNavigate, useFetcher } from "react-router";
 import {
   Page,
   Layout,
@@ -27,7 +27,7 @@ import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "../constants";
 import { syncGalleryToShopify } from "../shopify.server.helpers";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 export const loader = async ({ request, params }) => {
-  const { session, billing } = await authenticate.admin(request);
+  const { session, billing, redirect } = await authenticate.admin(request);
   const shop = session.shop;
 
   const billingCheck = await billing.check({
